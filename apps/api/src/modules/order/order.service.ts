@@ -682,8 +682,9 @@ export class OrderService {
       }
 
       try {
-        await this.refundDispatchTimeout(order);
-        refunded += 1;
+        if (await this.refundDispatchTimeout(order)) {
+          refunded += 1;
+        }
       } catch (error) {
         this.logger.warn(
           `派单超时自动退款失败 orderNo=${order.orderNo}: ${(error as Error).message}`,
@@ -699,11 +700,19 @@ export class OrderService {
   }
 
   // 单笔派单超时退款：作废未响应的派单 + 状态流转 + 退款流水 + 释放时段
-  private async refundDispatchTimeout(order: Order): Promise<void> {
+  // 返回是否真的产生了退款（已退款过则跳过，保证重复执行不会退两次钱）
+  private async refundDispatchTimeout(order: Order): Promise<boolean> {
     const now = new Date();
     const refundNo = `RF${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    let refunded = false;
 
     await this.prisma.$transaction(async (tx) => {
+      // 幂等保护：多实例部署或任务重跑时，已经退过款的订单不再重复退款
+      const current = await tx.order.findUnique({ where: { id: order.id } });
+      if (!current || toSharedStatus(current.status) === OrderStatus.REFUNDED) {
+        return;
+      }
+
       // 还在等待响应的派单记录一并作废，避免保洁师端留下过期任务
       await tx.dispatch.updateMany({
         where: { orderId: order.id, status: 'PENDING' },
@@ -730,6 +739,7 @@ export class OrderService {
           refundedAt: now,
         },
       });
+      refunded = true;
 
       // 退回已核销的优惠券：用户没有过错，券不该被消耗
       if (order.couponId) {
@@ -740,12 +750,18 @@ export class OrderService {
       }
     });
 
+    if (!refunded) {
+      return false;
+    }
+
     const hours = Math.max(1, Math.ceil(order.durationMinutes / 60));
     await this.slotService.releaseUsed(
       toDateOnly(order.serviceDate),
       this.slotService.buildTimes(order.startTime, hours),
       order.districtCode,
     );
+
+    return true;
   }
 
   // ============================================================

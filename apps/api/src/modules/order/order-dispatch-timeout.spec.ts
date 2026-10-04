@@ -31,6 +31,9 @@ function buildOrder(overrides: Record<string, unknown> = {}) {
 
 function setup(orders: unknown[]) {
   const tx = {
+    order: {
+      findUnique: jest.fn().mockResolvedValue({ id: 1n, status: OrderStatus.PENDING_DISPATCH }),
+    },
     dispatch: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
     refund: { create: jest.fn().mockResolvedValue({}) },
     userCoupon: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
@@ -169,5 +172,18 @@ describe('OrderService.refundTimeoutDispatchOrders', () => {
 
     expect(orderStatusService.transit).toHaveBeenCalledTimes(2);
     expect(refunded).toBe(1);
+  });
+
+  it('已经退过款的订单不会重复退款（多实例/重跑幂等）', async () => {
+    const order = buildOrder();
+    const { service, tx, orderStatusService, slotService } = setup([order]);
+    tx.order.findUnique.mockResolvedValue({ id: order.id, status: OrderStatus.REFUNDED });
+
+    const refunded = await service.refundTimeoutDispatchOrders();
+
+    expect(refunded).toBe(0);
+    expect(tx.refund.create).not.toHaveBeenCalled();
+    expect(orderStatusService.transit).not.toHaveBeenCalled();
+    expect(slotService.releaseUsed).not.toHaveBeenCalled();
   });
 });
