@@ -449,6 +449,8 @@ model Order {
 
   @@index([userId, status, createdAt])
   @@index([status, payExpireAt])
+  /// 派单超时自动退款扫描：按状态 + 派单截止时间过滤
+  @@index([status, dispatchDeadline])
   @@index([serviceDate, districtCode])
   @@map("order_tb")
 }

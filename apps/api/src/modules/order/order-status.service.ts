@@ -135,7 +135,10 @@ export class OrderStatusService {
         title: '订单已取消',
         content: `订单已取消${order.cancelReason ? `：${order.cancelReason}` : ''}`,
       },
-      [OrderStatus.REFUNDED]: { title: '退款已处理', content: '退款将原路返回，请留意到账' },
+      [OrderStatus.REFUNDED]: {
+        title: '退款已处理',
+        content: `${order.cancelReason ? `${order.cancelReason}，` : ''}退款将原路返回，请留意到账`,
+      },
       [OrderStatus.EXCEPTION]: { title: '订单异常', content: '订单出现异常，客服会尽快联系你' },
     };
 

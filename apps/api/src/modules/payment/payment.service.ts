@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DISPATCH_DEFAULT_TIMEOUT_MINUTES, ErrorCode, OrderStatus } from '@hc/shared';
+import { ErrorCode, OrderStatus } from '@hc/shared';
 import { BizException } from '../../common/exceptions/biz.exception';
+import { computeDispatchDeadline } from '../../common/utils/dispatch-time.util';
+import { toDateOnly } from '../../common/utils/service-time.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DispatchService } from '../dispatch/dispatch.service';
 import { OrderStatusService } from '../order/order-status.service';
@@ -110,7 +112,8 @@ export class PaymentService {
     }
 
     const now = new Date();
-    const dispatchDeadline = new Date(now.getTime() + DISPATCH_DEFAULT_TIMEOUT_MINUTES * 60 * 1000);
+    // 兜底截止时间：默认 60 分钟，距开工不足 4 小时的紧急订单为 15 分钟
+    const dispatchDeadline = computeDispatchDeadline(now, order.serviceDate, order.startTime);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.payment.update({
@@ -134,7 +137,7 @@ export class PaymentService {
 
     const hours = Math.max(1, Math.ceil(order.durationMinutes / 60));
     await this.slotService.confirm(
-      this.toDateOnly(order.serviceDate),
+      toDateOnly(order.serviceDate),
       this.slotService.buildTimes(order.startTime, hours),
       order.districtCode,
     );
@@ -181,10 +184,5 @@ export class PaymentService {
       where: { orderId, status: 'PENDING' },
       data: { status: 'CLOSED' },
     });
-  }
-
-  /** DATE 列统一按 UTC 零点处理 */
-  private toDateOnly(date: Date): Date {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
   }
 }

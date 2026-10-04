@@ -79,6 +79,8 @@ call pnpm --filter @hc/pricing build
 if errorlevel 1 goto :error
 call pnpm --filter @hc/pricing test
 if errorlevel 1 goto :error
+call pnpm --filter @hc/api test
+if errorlevel 1 goto :error
 echo   OK
 echo.
 

@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { Order } from '@prisma/client';
 import {
   AUTO_CONFIRM_HOURS,
   BOOKING_LEAD_MINUTES,
-  DISPATCH_DEFAULT_TIMEOUT_MINUTES,
   DOOR_FEE_AMOUNT,
   DOOR_FEE_WITHIN_MINUTES,
   ErrorCode,
@@ -10,6 +10,8 @@ import {
   OrderStatus,
 } from '@hc/shared';
 import { BizException } from '../../common/exceptions/biz.exception';
+import { computeDispatchDeadline } from '../../common/utils/dispatch-time.util';
+import { minutesUntilServiceStart, toDateOnly } from '../../common/utils/service-time.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AreaService } from '../area/area.service';
 import { DispatchService } from '../dispatch/dispatch.service';
@@ -408,7 +410,7 @@ export class OrderService {
 
     const hours = Math.max(1, Math.ceil(order.durationMinutes / 60));
     const times = this.slotService.buildTimes(order.startTime, hours);
-    const date = this.toDateOnly(order.serviceDate);
+    const date = toDateOnly(order.serviceDate);
 
     if (paid) {
       await this.slotService.releaseUsed(date, times, order.districtCode);
@@ -487,7 +489,7 @@ export class OrderService {
     }
 
     const newTimes = this.slotService.buildTimes(dto.startTime, hours);
-    const oldDate = this.toDateOnly(order.serviceDate);
+    const oldDate = toDateOnly(order.serviceDate);
     const oldTimes = this.slotService.buildTimes(order.startTime, hours);
 
     // 先占新时段：失败直接返回，原订单不受影响
@@ -531,9 +533,7 @@ export class OrderService {
           { operatorType: 'SYSTEM', reason: '改期后重新派单' },
           {
             staffId: null,
-            dispatchDeadline: new Date(
-              Date.now() + DISPATCH_DEFAULT_TIMEOUT_MINUTES * 60 * 1000,
-            ),
+            dispatchDeadline: computeDispatchDeadline(new Date(), newDate, dto.startTime),
           },
           tx,
         );
@@ -594,7 +594,7 @@ export class OrderService {
 
         const hours = Math.max(1, Math.ceil(order.durationMinutes / 60));
         await this.slotService.release(
-          this.toDateOnly(order.serviceDate),
+          toDateOnly(order.serviceDate),
           this.slotService.buildTimes(order.startTime, hours),
           order.districtCode,
         );
@@ -643,6 +643,111 @@ export class OrderService {
     return confirmed;
   }
 
+  /**
+   * 派单超时兜底：支付后超过 dispatchDeadline 仍无人接单，自动全额退款。
+   *
+   * 覆盖「一直没匹配到保洁师」和「派出去的人全部超时/拒单」两种情况：
+   * 只要订单还停在待派单/待接单，就全额退款、释放时段并退回优惠券，不需要客服介入。
+   */
+  async refundTimeoutDispatchOrders(): Promise<number> {
+    const now = new Date();
+
+    const candidates = await this.prisma.order.findMany({
+      where: {
+        status: {
+          in: [toDbStatus(OrderStatus.PENDING_DISPATCH), toDbStatus(OrderStatus.PENDING_ACCEPT)],
+        },
+        paidAt: { not: null },
+        deletedAt: null,
+        // 没有截止时间的老订单也捞出来，下面按支付时间兜底计算
+        OR: [{ dispatchDeadline: { lte: now } }, { dispatchDeadline: null }],
+      },
+      take: 50,
+      orderBy: { id: 'asc' },
+    });
+
+    let refunded = 0;
+
+    for (const order of candidates) {
+      const deadline =
+        order.dispatchDeadline ??
+        computeDispatchDeadline(
+          order.paidAt ?? order.createdAt,
+          order.serviceDate,
+          order.startTime,
+        );
+
+      if (deadline.getTime() > now.getTime()) {
+        continue;
+      }
+
+      try {
+        await this.refundDispatchTimeout(order);
+        refunded += 1;
+      } catch (error) {
+        this.logger.warn(
+          `派单超时自动退款失败 orderNo=${order.orderNo}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    if (refunded > 0) {
+      this.logger.log(`派单超时无人接单，已自动全额退款 ${refunded} 单`);
+    }
+
+    return refunded;
+  }
+
+  // 单笔派单超时退款：作废未响应的派单 + 状态流转 + 退款流水 + 释放时段
+  private async refundDispatchTimeout(order: Order): Promise<void> {
+    const now = new Date();
+    const refundNo = `RF${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+    await this.prisma.$transaction(async (tx) => {
+      // 还在等待响应的派单记录一并作废，避免保洁师端留下过期任务
+      await tx.dispatch.updateMany({
+        where: { orderId: order.id, status: 'PENDING' },
+        data: { status: 'CANCELED', respondedAt: now, reason: '派单超时自动退款' },
+      });
+
+      await this.orderStatusService.transit(
+        order.id,
+        OrderStatus.REFUNDED,
+        { operatorType: 'SYSTEM', reason: '派单超时无人接单，自动全额退款' },
+        { cancelReason: '超时无人接单', cancelBy: 'SYSTEM' },
+        tx,
+      );
+
+      await tx.refund.create({
+        data: {
+          orderId: order.id,
+          refundNo,
+          amount: order.amountPayable,
+          reason: '派单超时无人接单，自动全额退款',
+          // 平台原因，系统直接全额退回，无需人工审批
+          status: 'SUCCESS',
+          operator: 'SYSTEM',
+          refundedAt: now,
+        },
+      });
+
+      // 退回已核销的优惠券：用户没有过错，券不该被消耗
+      if (order.couponId) {
+        await tx.userCoupon.updateMany({
+          where: { id: order.couponId, orderId: order.id, status: 2 },
+          data: { status: 1, orderId: null, usedAt: null },
+        });
+      }
+    });
+
+    const hours = Math.max(1, Math.ceil(order.durationMinutes / 60));
+    await this.slotService.releaseUsed(
+      toDateOnly(order.serviceDate),
+      this.slotService.buildTimes(order.startTime, hours),
+      order.districtCode,
+    );
+  }
+
   // ============================================================
   // 内部工具
   // ============================================================
@@ -687,10 +792,6 @@ export class OrderService {
 
   private parseDate(dateStr: string): Date {
     return new Date(`${dateStr}T00:00:00.000Z`);
-  }
-
-  private toDateOnly(date: Date): Date {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
   }
 
   private buildEndTime(startTime: string, hours: number): string {
@@ -747,15 +848,11 @@ export class OrderService {
 
   // 距服务开始的剩余分钟数
   private minutesUntilStart(order: { serviceDate: Date; startTime: string }): number {
-    const dateStr = order.serviceDate.toISOString().slice(0, 10);
-    const startAt = new Date(`${dateStr}T${order.startTime}:00+08:00`);
-    return (startAt.getTime() - Date.now()) / (60 * 1000);
+    return minutesUntilServiceStart(order.serviceDate, order.startTime);
   }
 
   // 距开始时间是否过近
   private isStartTooSoon(serviceDate: Date, startTime: string): boolean {
-    const dateStr = serviceDate.toISOString().slice(0, 10);
-    const startAt = new Date(`${dateStr}T${startTime}:00+08:00`);
-    return startAt.getTime() - Date.now() < BOOKING_LEAD_MINUTES * 60 * 1000;
+    return minutesUntilServiceStart(serviceDate, startTime) < BOOKING_LEAD_MINUTES;
   }
 }

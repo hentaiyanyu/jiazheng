@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { StaffStatus, type Order, type Staff } from '@prisma/client';
 import { DISPATCH_STAFF_WAIT_MINUTES, ErrorCode, OrderStatus } from '@hc/shared';
 import { BizException } from '../../common/exceptions/biz.exception';
+import { isDispatchDeadlinePassed } from '../../common/utils/dispatch-time.util';
+import { toDateOnly } from '../../common/utils/service-time.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrderStatusService } from '../order/order-status.service';
 import { toDbStatus, toSharedStatus } from '../order/order-status.util';
@@ -86,7 +88,7 @@ export class DispatchService {
       },
     });
 
-    const date = this.toDateOnly(order.serviceDate);
+    const date = toDateOnly(order.serviceDate);
     const hours = Math.max(1, Math.ceil(order.durationMinutes / 60));
     const times = this.slotService.buildTimes(order.startTime, hours);
     const busyStatuses = [
@@ -230,6 +232,12 @@ export class DispatchService {
         continue;
       }
 
+      // 已超过派单截止时间：不再换人，留给订单定时任务自动全额退款
+      if (isDispatchDeadlinePassed(order.dispatchDeadline)) {
+        this.logger.warn(`订单 ${order.orderNo} 已超过派单截止时间，等待自动退款`);
+        continue;
+      }
+
       try {
         await this.orderStatusService.transit(
           order.id,
@@ -254,13 +262,17 @@ export class DispatchService {
    *
    * 场景：首次派单时保洁师都在忙 / 都被排除，之后有人空出来。
    * 已支付的待派单订单会被周期性重试，避免一直卡住。
+   * 超过派单截止时间的订单不再重试，交给自动退款任务处理。
    */
   async retryPendingOrders(): Promise<number> {
+    const now = new Date();
+
     const list = await this.prisma.order.findMany({
       where: {
         status: toDbStatus(OrderStatus.PENDING_DISPATCH),
         paidAt: { not: null },
         deletedAt: null,
+        OR: [{ dispatchDeadline: null }, { dispatchDeadline: { gt: now } }],
       },
       take: 20,
       orderBy: { id: 'asc' },
@@ -281,9 +293,5 @@ export class DispatchService {
     }
 
     return dispatched;
-  }
-
-  private toDateOnly(date: Date): Date {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
   }
 }
