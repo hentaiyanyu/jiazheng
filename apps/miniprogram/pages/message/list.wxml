@@ -1,0 +1,19 @@
+<view class="page">
+  <view
+    wx:for="{{list}}"
+    wx:key="id"
+    class="card message-card {{item.isRead ? '' : 'message-unread'}}"
+    data-id="{{item.id}}"
+    data-page="{{item.page}}"
+    bindtap="onTapItem"
+  >
+    <view class="row">
+      <text class="message-title">{{item.title}}</text>
+      <text class="dot" wx:if="{{!item.isRead}}"></text>
+    </view>
+    <view class="message-content">{{item.content}}</view>
+    <view class="muted message-time">{{item.createdAt}}</view>
+  </view>
+
+  <view wx:if="{{!loading && list.length === 0}}" class="empty">暂无消息</view>
+</view>

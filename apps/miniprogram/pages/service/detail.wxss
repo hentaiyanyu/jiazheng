@@ -1,0 +1,94 @@
+.header {
+  background: #ffffff;
+  padding: 36rpx 32rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin-top: 12rpx;
+  color: #4e5969;
+  font-size: 26rpx;
+}
+
+.price-line {
+  margin-top: 24rpx;
+  display: flex;
+  align-items: baseline;
+}
+
+.price-symbol {
+  font-size: 26rpx;
+}
+
+.price-num {
+  font-size: 48rpx;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx;
+  border: 2rpx solid #e5e6eb;
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.option-active {
+  border-color: #00b578;
+  background: #f2fcf8;
+}
+
+.option-name {
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.option-price {
+  font-size: 30rpx;
+}
+
+.bullet {
+  font-size: 26rpx;
+  color: #4e5969;
+  line-height: 48rpx;
+}
+
+.bullet-muted {
+  color: #8a8f99;
+}
+
+.notice {
+  font-size: 26rpx;
+  color: #4e5969;
+  line-height: 44rpx;
+}
+
+.footer-space {
+  height: 160rpx;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.footer-price {
+  font-size: 28rpx;
+}
+
+.footer-btn {
+  width: 320rpx;
+}

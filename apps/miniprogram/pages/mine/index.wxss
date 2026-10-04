@@ -1,0 +1,29 @@
+.profile {
+  display: flex;
+  align-items: center;
+  padding: 48rpx 32rpx;
+  background: linear-gradient(135deg, #00b578 0%, #12c98a 100%);
+  color: #ffffff;
+}
+
+.avatar {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  text-align: center;
+  line-height: 112rpx;
+  font-size: 44rpx;
+  font-weight: 700;
+  margin-right: 24rpx;
+}
+
+.nickname {
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.profile .muted {
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 8rpx;
+}

@@ -1,0 +1,56 @@
+<view class="page">
+  <view class="card" wx:if="{{order}}">
+    <view class="section-title">本次服务</view>
+    <view>{{order.service.name}} · {{order.service.skuName}}</view>
+    <view class="muted">{{order.serviceDate}} {{order.startTime}}-{{order.endTime}}</view>
+    <view class="muted" wx:if="{{order.staff}}">服务人员：{{order.staff.name}}</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">服务评分</view>
+    <view class="stars">
+      <text
+        wx:for="{{starOptions}}"
+        wx:key="*this"
+        class="star {{score >= item ? 'star-active' : ''}}"
+        data-score="{{item}}"
+        bindtap="onSelectScore"
+      >★</text>
+      <text class="score-text">{{score}} 分</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">标签（可多选）</view>
+    <view class="tags">
+      <view
+        wx:for="{{tags}}"
+        wx:key="name"
+        class="tag {{item.checked ? 'tag-active' : ''}}"
+        data-name="{{item.name}}"
+        bindtap="onToggleTag"
+      >{{item.name}}</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">补充评价</view>
+    <textarea
+      class="textarea"
+      placeholder="说点什么，帮助我们把服务做得更好（选填）"
+      maxlength="500"
+      value="{{content}}"
+      bindinput="onInput"
+    />
+    <view class="row anonymous-row">
+      <text class="muted">匿名评价</text>
+      <switch checked="{{isAnonymous}}" bindchange="onAnonymousChange" color="#00b578" />
+    </view>
+  </view>
+
+  <view class="footer-space"></view>
+
+  <view class="footer">
+    <view class="btn-primary" bindtap="onSubmit">{{submitting ? '提交中…' : '提交评价'}}</view>
+  </view>
+</view>

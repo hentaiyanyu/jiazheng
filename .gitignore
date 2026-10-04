@@ -1,0 +1,33 @@
+# 依赖
+node_modules/
+.pnpm-store/
+
+# 构建产物
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# 环境变量（含密钥，禁止提交）
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db
+*.swp
+
+# 小程序
+apps/miniprogram/miniprogram_npm/
+apps/miniprogram/node_modules/
+
+# 临时文件
+tmp/
+temp/
+uploads/

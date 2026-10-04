@@ -1,0 +1,52 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/service/detail",
+    "pages/order/create",
+    "pages/order/detail",
+    "pages/order/review",
+    "pages/order/reschedule",
+    "pages/order/list",
+    "pages/address/list",
+    "pages/address/edit",
+    "pages/mine/index",
+    "pages/message/list",
+    "pages/staff/task",
+    "pages/staff/detail"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "家政清洁服务",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f5f6f8"
+  },
+  "tabBar": {
+    "color": "#8a8f99",
+    "selectedColor": "#00b578",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/order/list",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于选择上门服务地址"
+    }
+  },
+  "requiredPrivateInfos": ["chooseLocation", "getLocation"],
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

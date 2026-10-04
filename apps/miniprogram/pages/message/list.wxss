@@ -1,0 +1,30 @@
+.message-card {
+  padding: 28rpx;
+}
+
+.message-unread {
+  border-left: 6rpx solid #00b578;
+}
+
+.message-title {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.message-content {
+  margin-top: 12rpx;
+  color: #4e5969;
+  font-size: 27rpx;
+  line-height: 42rpx;
+}
+
+.message-time {
+  margin-top: 12rpx;
+}
+
+.dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #f53f3f;
+}

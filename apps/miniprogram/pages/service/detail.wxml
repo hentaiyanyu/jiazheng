@@ -1,0 +1,71 @@
+<view class="page">
+  <block wx:if="{{service}}">
+    <view class="header">
+      <view class="title">{{service.name}}</view>
+      <view class="subtitle">{{service.subtitle}}</view>
+      <view class="price-line">
+        <text class="price-symbol price">¥</text>
+        <text class="price-num price">{{estimate}}</text>
+        <text class="muted"> 预计 {{durationMinutes}} 分钟</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">选择规格</view>
+      <view
+        wx:for="{{service.skus}}"
+        wx:key="id"
+        class="option {{skuId === item.id ? 'option-active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="onSelectSku"
+      >
+        <view class="option-main">
+          <view class="option-name">{{item.name}}</view>
+          <view class="muted">{{item.durationMinutes}} 分钟</view>
+        </view>
+        <view class="option-price price">¥{{item.priceLabel}}</view>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{addons.length > 0}}">
+      <view class="section-title">可选附加项</view>
+      <view
+        wx:for="{{addons}}"
+        wx:key="id"
+        class="option {{item.checked ? 'option-active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="onToggleAddon"
+      >
+        <view class="option-main">
+          <view class="option-name">{{item.name}}</view>
+          <view class="muted">按{{item.unit}}计价</view>
+        </view>
+        <view class="option-price price">+¥{{item.priceLabel}}</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">服务包含</view>
+      <view wx:for="{{service.includedItems}}" wx:key="*this" class="bullet">✓ {{item}}</view>
+      <view wx:if="{{service.excludedItems.length > 0}}" class="section-title" style="margin-top: 28rpx;">不包含</view>
+      <view wx:for="{{service.excludedItems}}" wx:key="*this" class="bullet bullet-muted">✕ {{item}}</view>
+    </view>
+
+    <view class="card" wx:if="{{service.notice}}">
+      <view class="section-title">温馨提示</view>
+      <view class="notice">{{service.notice}}</view>
+    </view>
+
+    <view class="footer-space"></view>
+
+    <view class="footer">
+      <view class="footer-price">
+        <text class="muted">合计</text>
+        <text class="price price-num"> ¥{{estimate}}</text>
+      </view>
+      <view class="btn-primary footer-btn" bindtap="onBook">立即预约</view>
+    </view>
+  </block>
+
+  <view wx:else class="empty">加载中…</view>
+</view>

@@ -1,0 +1,60 @@
+.addr-name {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.addr-detail {
+  margin: 12rpx 0 8rpx;
+  font-size: 28rpx;
+}
+
+.tags {
+  margin-top: 16rpx;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  background: #f0f1f3;
+  color: #4e5969;
+  margin-right: 12rpx;
+}
+
+.tag-default {
+  background: #e8faf2;
+  color: #00b578;
+}
+
+.actions {
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid #f0f1f3;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action {
+  font-size: 26rpx;
+  color: #4e5969;
+  margin-left: 32rpx;
+}
+
+.action-danger {
+  color: #f53f3f;
+}
+
+.footer-space {
+  height: 160rpx;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+}

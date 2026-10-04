@@ -1,0 +1,118 @@
+.login-btn {
+  margin-top: 32rpx;
+}
+
+.tip {
+  margin-top: 20rpx;
+  text-align: center;
+}
+
+.profile {
+  position: relative;
+  padding: 40rpx 32rpx;
+  background: linear-gradient(135deg, #2b5cff 0%, #4d82ff 100%);
+  color: #ffffff;
+}
+
+.profile-name {
+  font-size: 38rpx;
+  font-weight: 700;
+}
+
+.profile-meta {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.logout {
+  position: absolute;
+  right: 32rpx;
+  top: 44rpx;
+  font-size: 26rpx;
+  padding: 8rpx 24rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  border-radius: 40rpx;
+}
+
+.message-link {
+  position: absolute;
+  right: 160rpx;
+  top: 44rpx;
+  font-size: 26rpx;
+  padding: 8rpx 24rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  border-radius: 40rpx;
+}
+
+.tabs {
+  white-space: nowrap;
+  padding: 20rpx 16rpx 4rpx;
+}
+
+.tab {
+  display: inline-block;
+  padding: 12rpx 30rpx;
+  margin: 0 8rpx;
+  background: #ffffff;
+  border-radius: 40rpx;
+  font-size: 26rpx;
+  color: #4e5969;
+}
+
+.tab-active {
+  background: #2b5cff;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.task-status {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #2b5cff;
+}
+
+.task-title {
+  margin: 16rpx 0 8rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.task-footer {
+  margin-top: 16rpx;
+}
+
+.actions {
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid #f0f1f3;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.card-hint {
+  margin-top: 16rpx;
+  text-align: right;
+  font-size: 24rpx;
+  color: #8a8f99;
+}
+
+.btn-ghost {
+  padding: 0 36rpx;
+  line-height: 76rpx;
+  border: 2rpx solid #d9dde3;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  color: #4e5969;
+  margin-left: 20rpx;
+}
+
+.btn-sm {
+  padding: 0 44rpx;
+  line-height: 80rpx;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  margin-left: 20rpx;
+  background: #2b5cff;
+}

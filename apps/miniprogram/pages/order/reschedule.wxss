@@ -1,0 +1,79 @@
+.dates {
+  white-space: nowrap;
+}
+
+.date {
+  display: inline-block;
+  width: 132rpx;
+  padding: 18rpx 0;
+  margin-right: 16rpx;
+  text-align: center;
+  border-radius: 16rpx;
+  background: #f5f6f8;
+}
+
+.date-active {
+  background: #00b578;
+  color: #ffffff;
+}
+
+.date-label {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.date-sub {
+  font-size: 22rpx;
+  margin-top: 6rpx;
+  opacity: 0.8;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.slot {
+  width: 196rpx;
+  margin: 0 16rpx 16rpx 0;
+  padding: 16rpx 0;
+  text-align: center;
+  border: 2rpx solid #e5e6eb;
+  border-radius: 14rpx;
+}
+
+.slot-active {
+  border-color: #00b578;
+  background: #f2fcf8;
+}
+
+.slot-disabled {
+  background: #f7f8fa;
+  color: #c9ced6;
+  border-color: #f0f1f3;
+}
+
+.slot-time {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.slot-tip {
+  font-size: 22rpx;
+  margin-top: 4rpx;
+  opacity: 0.75;
+}
+
+.footer-space {
+  height: 160rpx;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+}

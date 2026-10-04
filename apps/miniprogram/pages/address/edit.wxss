@@ -1,0 +1,53 @@
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 0;
+  border-bottom: 2rpx solid #f5f6f8;
+}
+
+.field:last-child {
+  border-bottom: none;
+}
+
+.label {
+  width: 160rpx;
+  color: #4e5969;
+  font-size: 28rpx;
+}
+
+.input {
+  flex: 1;
+  text-align: right;
+  font-size: 28rpx;
+}
+
+.picker-value {
+  min-width: 200rpx;
+  text-align: right;
+  font-size: 28rpx;
+}
+
+.btn-secondary {
+  margin-top: 24rpx;
+  text-align: center;
+  color: #00b578;
+  border: 2rpx solid #00b578;
+  border-radius: 44rpx;
+  line-height: 80rpx;
+  font-size: 28rpx;
+}
+
+.footer-space {
+  height: 160rpx;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+}

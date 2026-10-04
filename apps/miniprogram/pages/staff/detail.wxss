@@ -1,0 +1,85 @@
+.status-card {
+  background: linear-gradient(135deg, #2b5cff 0%, #4d82ff 100%);
+  color: #ffffff;
+  padding: 48rpx 32rpx;
+}
+
+.status-text {
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.status-tip {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.income {
+  color: #2b5cff;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.photo {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 12rpx;
+  margin-top: 12rpx;
+  margin-right: 12rpx;
+  background: #f5f6f8;
+}
+
+.photo-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.log-item {
+  padding: 12rpx 0;
+  border-bottom: 2rpx solid #f5f6f8;
+}
+
+.log-status {
+  font-size: 26rpx;
+  margin-right: 12rpx;
+}
+
+.footer-space {
+  height: 160rpx;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-ghost {
+  padding: 0 36rpx;
+  line-height: 76rpx;
+  border: 2rpx solid #d9dde3;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  color: #4e5969;
+  margin-left: 20rpx;
+}
+
+.btn-sm {
+  padding: 0 44rpx;
+  line-height: 80rpx;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  margin-left: 20rpx;
+  background: #2b5cff;
+}

@@ -1,0 +1,34 @@
+<view class="page">
+  <view
+    wx:for="{{list}}"
+    wx:key="id"
+    class="card"
+    data-id="{{item.id}}"
+    bindtap="onSelect"
+  >
+    <view class="row">
+      <text class="addr-name">{{item.contactName}}</text>
+      <text class="muted">{{item.phoneText}}</text>
+    </view>
+    <view class="addr-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</view>
+    <view class="muted">{{item.floor}} 楼 · {{item.hasElevator ? '有电梯' : '无电梯'}}</view>
+
+    <view class="tags">
+      <text wx:if="{{item.isDefault}}" class="tag tag-default">默认</text>
+      <text wx:if="{{item.tag}}" class="tag">{{item.tag}}</text>
+    </view>
+
+    <view class="actions">
+      <text wx:if="{{!item.isDefault}}" class="action" data-id="{{item.id}}" catchtap="onSetDefault">设为默认</text>
+      <text class="action" data-id="{{item.id}}" catchtap="onEdit">编辑</text>
+      <text class="action action-danger" data-id="{{item.id}}" catchtap="onDelete">删除</text>
+    </view>
+  </view>
+
+  <view wx:if="{{!loading && list.length === 0}}" class="empty">还没有服务地址</view>
+
+  <view class="footer-space"></view>
+  <view class="footer">
+    <view class="btn-primary" bindtap="onAdd">+ 新增地址</view>
+  </view>
+</view>

@@ -1,0 +1,83 @@
+.hero {
+  padding: 48rpx 32rpx 36rpx;
+  background: linear-gradient(135deg, #00b578 0%, #12c98a 100%);
+  color: #ffffff;
+}
+
+.hero-title {
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.hero-sub {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.cats {
+  white-space: nowrap;
+  padding: 24rpx 16rpx 8rpx;
+}
+
+.cat {
+  display: inline-block;
+  padding: 12rpx 32rpx;
+  margin: 0 8rpx;
+  background: #ffffff;
+  border-radius: 40rpx;
+  font-size: 26rpx;
+  color: #4e5969;
+}
+
+.cat-active {
+  background: #00b578;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.list {
+  padding-bottom: 24rpx;
+}
+
+.service-card {
+  display: flex;
+  align-items: center;
+}
+
+.service-main {
+  flex: 1;
+  padding-right: 20rpx;
+}
+
+.service-name {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.service-sub {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: #4e5969;
+}
+
+.service-meta {
+  margin-top: 12rpx;
+}
+
+.service-price {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.price-symbol {
+  font-size: 24rpx;
+}
+
+.price-num {
+  font-size: 40rpx;
+}
+
+.price-unit {
+  margin-left: 4rpx;
+}

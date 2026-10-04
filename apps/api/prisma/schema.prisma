@@ -1,0 +1,745 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 第 1 批：区域、小区、用户、地址（Sprint 0–1）
+// 约定：
+//   - 金额使用 BigInt，单位为分
+//   - 时间为 DATETIME，统一 Asia/Shanghai
+//   - 软删除使用 deletedAt
+//   - 表名用 snake_case 单数
+// ============================================================
+
+/// 行政区划
+model Region {
+  id        BigInt    @id @default(autoincrement())
+  code      String    @unique @db.VarChar(12)
+  name      String    @db.VarChar(64)
+  /// 1 省 2 市 3 区
+  level     Int       @default(3)
+  parentId  BigInt?   @map("parent_id")
+  /// 是否已开通服务
+  isServed  Boolean   @default(false) @map("is_served")
+  sort      Int       @default(0)
+  /// 1 正常 0 停用
+  status    Int       @default(1)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  parent      Region?     @relation("RegionTree", fields: [parentId], references: [id])
+  children    Region[]    @relation("RegionTree")
+  communities Community[]
+
+  @@index([parentId])
+  @@index([isServed])
+  @@map("region")
+}
+
+/// 小区（用于服务范围白名单与派单）
+model Community {
+  id        BigInt    @id @default(autoincrement())
+  regionId  BigInt    @map("region_id")
+  name      String    @db.VarChar(128)
+  address   String?   @db.VarChar(255)
+  lng       Decimal?  @db.Decimal(10, 7)
+  lat       Decimal?  @db.Decimal(10, 7)
+  isServed  Boolean   @default(true) @map("is_served")
+  status    Int       @default(1)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  region    Region    @relation(fields: [regionId], references: [id])
+  addresses Address[]
+
+  @@index([regionId])
+  @@index([name])
+  @@map("community")
+}
+
+/// 用户（C 端下单客户）
+model User {
+  id          BigInt    @id @default(autoincrement())
+  openid      String    @unique @db.VarChar(64)
+  unionid     String?   @db.VarChar(64)
+  nickname    String    @default("微信用户") @db.VarChar(64)
+  avatar      String    @default("") @db.VarChar(512)
+  /// 加密存储，不可明文落库
+  phone       String?   @unique @db.VarChar(128)
+  memberLevel Int       @default(0) @map("member_level")
+  points      Int       @default(0)
+  /// 1 正常 2 黑名单
+  status      Int       @default(1)
+  lastOrderAt DateTime? @map("last_order_at")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  addresses   Address[]
+  userCoupons UserCoupon[]
+
+  @@index([phone])
+  @@map("user")
+}
+
+/// 服务地址
+model Address {
+  id           BigInt    @id @default(autoincrement())
+  userId       BigInt    @map("user_id")
+  contactName  String    @map("contact_name") @db.VarChar(32)
+  /// 加密存储
+  contactPhone String    @map("contact_phone") @db.VarChar(128)
+  province     String    @db.VarChar(32)
+  city         String    @db.VarChar(32)
+  district     String    @db.VarChar(32)
+  regionCode   String    @map("region_code") @db.VarChar(12)
+  communityId  BigInt?   @map("community_id")
+  detail       String    @db.VarChar(255)
+  lng          Decimal   @db.Decimal(10, 7)
+  lat          Decimal   @db.Decimal(10, 7)
+  /// 楼层（用于计算楼层费）
+  floor        Int       @default(1)
+  hasElevator  Boolean   @default(true) @map("has_elevator")
+  /// 家 / 公司
+  tag          String?   @db.VarChar(16)
+  isDefault    Boolean   @default(false) @map("is_default")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  user      User       @relation(fields: [userId], references: [id])
+  community Community? @relation(fields: [communityId], references: [id])
+
+  @@index([userId, isDefault])
+  @@map("address")
+}
+
+// ============================================================
+// 第 2–3 批：商品（分类/服务/规格/附加项）、时段、价格规则、优惠券
+// ============================================================
+
+/// 计价类型
+enum PriceType {
+  /// 按时长（如日常保洁 3 小时）
+  DURATION
+  /// 按面积（如深度保洁 每平米）
+  AREA
+  /// 按台件（如油烟机清洗）
+  PIECE
+  /// 套餐（组合价）
+  PACKAGE
+}
+
+/// 优惠券类型
+enum CouponType {
+  /// 固定金额（value 单位为分）
+  FIXED
+  /// 按比例减免（value 为百分比，10 表示减 10%）
+  PERCENT
+}
+
+/// 服务分类
+model Category {
+  id        BigInt    @id @default(autoincrement())
+  name      String    @db.VarChar(32)
+  icon      String    @default("") @db.VarChar(512)
+  sort      Int       @default(0)
+  /// 1 上架 0 下架
+  status    Int       @default(1)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  services Service[]
+
+  @@map("category")
+}
+
+/// 服务
+model Service {
+  id              BigInt    @id @default(autoincrement())
+  categoryId      BigInt    @map("category_id")
+  name            String    @db.VarChar(64)
+  subtitle        String?   @db.VarChar(128)
+  coverImg        String    @default("") @map("cover_img") @db.VarChar(512)
+  /// 图集，字符串数组
+  images          Json?
+  description     String?   @db.Text
+  /// 服务包含项，字符串数组
+  includedItems   Json?     @map("included_items")
+  /// 服务不包含项，字符串数组
+  excludedItems   Json?     @map("excluded_items")
+  notice          String?   @db.Text
+  priceType       PriceType @map("price_type")
+  /// 展示用价格区间（分）
+  basePriceMin    BigInt    @map("base_price_min")
+  basePriceMax    BigInt    @map("base_price_max")
+  /// 标准服务时长（分钟）
+  durationMinutes Int       @default(120) @map("duration_minutes")
+  /// 需要几名服务人员
+  staffCount      Int       @default(1) @map("staff_count")
+  sort            Int       @default(0)
+  status          Int       @default(1)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  category Category          @relation(fields: [categoryId], references: [id])
+  skus     ServiceSku[]
+  addons   ServiceAddonRel[]
+
+  @@index([categoryId, status])
+  @@map("service")
+}
+
+/// 服务规格（下单的最小可售单元）
+model ServiceSku {
+  id              BigInt    @id @default(autoincrement())
+  serviceId       BigInt    @map("service_id")
+  name            String    @db.VarChar(64)
+  /// 价格（分）
+  price           BigInt
+  durationMinutes Int       @map("duration_minutes")
+  /// 适用面积区间（按面积计价时使用）
+  areaMin         Int?      @map("area_min")
+  areaMax         Int?      @map("area_max")
+  staffCount      Int       @default(1) @map("staff_count")
+  isDefault       Boolean   @default(false) @map("is_default")
+  sort            Int       @default(0)
+  status          Int       @default(1)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@index([serviceId, status])
+  @@map("service_sku")
+}
+
+/// 附加项（擦玻璃、油烟机、除螨等）
+model ServiceAddon {
+  id              BigInt    @id @default(autoincrement())
+  name            String    @db.VarChar(64)
+  /// 价格（分）
+  price           BigInt
+  /// 计价单位：项 / 台 / ㎡
+  unit            String    @default("项") @db.VarChar(8)
+  durationMinutes Int       @default(0) @map("duration_minutes")
+  sort            Int       @default(0)
+  status          Int       @default(1)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  services ServiceAddonRel[]
+
+  @@map("service_addon")
+}
+
+/// 服务与附加项的关联
+model ServiceAddonRel {
+  serviceId BigInt @map("service_id")
+  addonId   BigInt @map("addon_id")
+  sort      Int    @default(0)
+
+  service Service      @relation(fields: [serviceId], references: [id])
+  addon   ServiceAddon @relation(fields: [addonId], references: [id])
+
+  @@id([serviceId, addonId])
+  @@map("service_addon_rel")
+}
+
+/// 时段库存（粒度为 1 小时）
+model TimeSlot {
+  id           BigInt   @id @default(autoincrement())
+  serviceDate  DateTime @map("service_date") @db.Date
+  /// 形如 "09:00"，避免时区换算问题
+  startTime    String   @map("start_time") @db.VarChar(5)
+  endTime      String   @map("end_time") @db.VarChar(5)
+  districtCode String   @map("district_code") @db.VarChar(12)
+  /// 可接单上限
+  capacity     Int      @default(0)
+  /// 已预占（未支付）
+  locked       Int      @default(0)
+  /// 已确认占用
+  used         Int      @default(0)
+  /// 1 开放 0 关闭
+  status       Int      @default(1)
+  version      Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([serviceDate, startTime, districtCode])
+  @@index([serviceDate, districtCode])
+  @@map("time_slot")
+}
+
+/// 价格规则（按城市配置）
+model PriceRule {
+  id       BigInt @id @default(autoincrement())
+  cityCode String @unique @map("city_code") @db.VarChar(12)
+
+  /// 楼层费：{ freeFloor: 1, perFloorAmount: 500 }
+  floorFeeRule       Json @map("floor_fee_rule")
+  /// 里程费：{ freeKm: 5, perKmAmount: 200 }
+  distanceFeeRule    Json @map("distance_fee_rule")
+  /// 节假日日期列表
+  holidayDates       Json @map("holiday_dates")
+  /// 节假日加价百分比（120 = 上浮 20%）
+  holidayRatePercent Int  @default(100) @map("holiday_rate_percent")
+  /// 夜间起始小时（含）
+  nightStartHour     Int  @default(20) @map("night_start_hour")
+  /// 夜间加价百分比
+  nightRatePercent   Int  @default(100) @map("night_rate_percent")
+  status             Int  @default(1)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("price_rule")
+}
+
+/// 优惠券模板
+model Coupon {
+  id         BigInt     @id @default(autoincrement())
+  name       String     @db.VarChar(64)
+  type       CouponType
+  /// FIXED：减免金额（分）；PERCENT：减免百分比（10 = 减 10%）
+  value      BigInt
+  /// 使用门槛（分）
+  minAmount  BigInt     @default(0) @map("min_amount")
+  totalQty   Int        @default(0) @map("total_qty")
+  issuedQty  Int        @default(0) @map("issued_qty")
+  /// 1 固定有效期 2 领取后 N 天有效
+  validType  Int        @default(1) @map("valid_type")
+  validStart DateTime?  @map("valid_start")
+  validEnd   DateTime?  @map("valid_end")
+  validDays  Int?       @map("valid_days")
+  status     Int        @default(1)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  deletedAt  DateTime?  @map("deleted_at")
+
+  userCoupons UserCoupon[]
+
+  @@map("coupon")
+}
+
+/// 用户持有的优惠券
+model UserCoupon {
+  id         BigInt    @id @default(autoincrement())
+  couponId   BigInt    @map("coupon_id")
+  userId     BigInt    @map("user_id")
+  /// 1 未使用 2 已使用 3 已过期
+  status     Int       @default(1)
+  orderId    BigInt?   @map("order_id")
+  expireAt   DateTime  @map("expire_at")
+  usedAt     DateTime? @map("used_at")
+  receivedAt DateTime  @default(now()) @map("received_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  coupon Coupon @relation(fields: [couponId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+  @@index([couponId])
+  @@map("user_coupon")
+}
+
+// ============================================================
+// 第 4 批：订单、订单明细、状态流水、支付、退款（Sprint 2）
+// ============================================================
+
+/// 订单状态（取值必须与 packages/shared 中的 OrderStatus 保持一致）
+enum OrderStatus {
+  /// 待支付
+  PENDING_PAYMENT
+  /// 待派单
+  PENDING_DISPATCH
+  /// 待接单
+  PENDING_ACCEPT
+  /// 待服务
+  PENDING_SERVICE
+  /// 服务中
+  IN_SERVICE
+  /// 待确认
+  PENDING_CONFIRM
+  /// 已完成
+  COMPLETED
+  /// 已改期
+  RESCHEDULED
+  /// 已取消
+  CANCELED
+  /// 售后中
+  AFTER_SALES
+  /// 已退款
+  REFUNDED
+  /// 异常
+  EXCEPTION
+}
+
+/// 订单
+model Order {
+  id              BigInt      @id @default(autoincrement())
+  orderNo         String      @unique @map("order_no") @db.VarChar(32)
+  /// 客户端幂等键：同一 requestId 只会创建一张订单
+  requestId       String      @unique @map("request_id") @db.VarChar(64)
+  userId          BigInt      @map("user_id")
+  staffId         BigInt?     @map("staff_id")
+  status          OrderStatus @default(PENDING_PAYMENT)
+
+  serviceId       BigInt      @map("service_id")
+  skuId           BigInt      @map("sku_id")
+  serviceDate     DateTime    @map("service_date") @db.Date
+  /// 形如 "09:00"，按字符串存储避免时区换算
+  startTime       String      @map("start_time") @db.VarChar(5)
+  endTime         String      @map("end_time") @db.VarChar(5)
+  durationMinutes Int         @map("duration_minutes")
+  districtCode    String      @map("district_code") @db.VarChar(12)
+
+  /// 地址快照，避免用户后续修改地址影响历史订单
+  addressSnapshot Json        @map("address_snapshot")
+  /// 服务快照，避免改价影响历史订单
+  serviceSnapshot Json        @map("service_snapshot")
+
+  amountService   BigInt      @map("amount_service")
+  amountAddon     BigInt      @default(0) @map("amount_addon")
+  amountExtra     BigInt      @default(0) @map("amount_extra")
+  amountDiscount  BigInt      @default(0) @map("amount_discount")
+  amountPayable   BigInt      @map("amount_payable")
+  couponId        BigInt?     @map("coupon_id")
+  remark          String?     @db.VarChar(255)
+
+  /// 支付截止时间，超时自动关闭
+  payExpireAt     DateTime?   @map("pay_expire_at")
+  dispatchDeadline DateTime?  @map("dispatch_deadline")
+  paidAt          DateTime?   @map("paid_at")
+  acceptedAt      DateTime?   @map("accepted_at")
+  checkinAt       DateTime?   @map("checkin_at")
+  finishedAt      DateTime?   @map("finished_at")
+  confirmedAt     DateTime?   @map("confirmed_at")
+  canceledAt      DateTime?   @map("canceled_at")
+  cancelReason    String?     @map("cancel_reason") @db.VarChar(255)
+  cancelBy        String?     @map("cancel_by") @db.VarChar(16)
+
+  /// 到店打卡照片
+  checkinImage    String?     @map("checkin_image") @db.VarChar(512)
+  /// 完工上报照片（字符串数组）
+  finishImages    Json?       @map("finish_images")
+
+  version         Int         @default(0)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  deletedAt       DateTime?   @map("deleted_at")
+
+  items    OrderItem[]
+  logs     OrderStatusLog[]
+  payments Payment[]
+  dispatches Dispatch[]
+  review   Review?
+
+  @@index([userId, status, createdAt])
+  @@index([status, payExpireAt])
+  @@index([serviceDate, districtCode])
+  @@map("order_tb")
+}
+
+/// 订单明细（服务与附加项快照）
+model OrderItem {
+  id              BigInt   @id @default(autoincrement())
+  orderId         BigInt   @map("order_id")
+  /// SERVICE / ADDON
+  itemType        String   @map("item_type") @db.VarChar(16)
+  itemId          BigInt   @map("item_id")
+  name            String   @db.VarChar(64)
+  price           BigInt
+  quantity        Int      @default(1)
+  durationMinutes Int      @default(0) @map("duration_minutes")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("order_item")
+}
+
+/// 订单状态流水，用于客服溯源
+model OrderStatusLog {
+  id           BigInt   @id @default(autoincrement())
+  orderId      BigInt   @map("order_id")
+  fromStatus   String?  @map("from_status") @db.VarChar(32)
+  toStatus     String   @map("to_status") @db.VarChar(32)
+  /// USER / STAFF / ADMIN / SYSTEM
+  operatorType String   @map("operator_type") @db.VarChar(16)
+  operatorId   String?  @map("operator_id") @db.VarChar(64)
+  reason       String?  @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("order_status_log")
+}
+
+/// 支付流水
+model Payment {
+  id            BigInt    @id @default(autoincrement())
+  orderId       BigInt    @map("order_id")
+  /// 商户订单号（唯一，用于幂等）
+  outTradeNo    String    @unique @map("out_trade_no") @db.VarChar(64)
+  /// 微信支付单号
+  transactionId String?   @unique @map("transaction_id") @db.VarChar(64)
+  amount        BigInt
+  /// WECHAT / MOCK
+  channel       String    @default("WECHAT") @db.VarChar(16)
+  /// PENDING / PAID / FAILED / CLOSED
+  status        String    @default("PENDING") @db.VarChar(16)
+  paidAt        DateTime? @map("paid_at")
+  rawCallback   Json?     @map("raw_callback")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("payment")
+}
+
+/// 退款流水
+model Refund {
+  id         BigInt    @id @default(autoincrement())
+  orderId    BigInt    @map("order_id")
+  refundNo   String    @unique @map("refund_no") @db.VarChar(64)
+  amount     BigInt
+  reason     String?   @db.VarChar(255)
+  /// PENDING / SUCCESS / FAILED
+  status     String    @default("PENDING") @db.VarChar(16)
+  operator   String?   @db.VarChar(64)
+  refundedAt DateTime? @map("refunded_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@map("refund")
+}
+
+// ============================================================
+// 第 5 批：保洁师、排班、派单（Sprint 3）
+// ============================================================
+
+/// 保洁师状态
+enum StaffStatus {
+  /// 待审核
+  PENDING
+  /// 正常接单
+  ACTIVE
+  /// 暂停接单
+  PAUSED
+  /// 封禁
+  BANNED
+}
+
+/// 保洁师
+model Staff {
+  id                BigInt      @id @default(autoincrement())
+  /// 保洁师用微信登录，与用户 openid 独立
+  openid            String      @unique @db.VarChar(64)
+  name              String      @db.VarChar(32)
+  /// 加密存储
+  phone             String      @db.VarChar(128)
+  avatar            String      @default("") @db.VarChar(512)
+  /// 技能标签，字符串数组
+  skillTags         Json?
+  /// 服务区域（行政区代码数组）
+  serviceDistricts  Json?
+  /// 等级
+  level             Int         @default(1)
+  /// 评分 ×10（49 表示 4.9 分）
+  ratingX10         Int         @default(50) @map("rating_x10")
+  /// 累计完成单量
+  orderCount        Int         @default(0) @map("order_count")
+  /// 接单率（百分比）
+  acceptRate        Int         @default(100) @map("accept_rate")
+  /// 准时率（百分比）
+  onTimeRate        Int         @default(100) @map("on_time_rate")
+  /// 每日接单上限
+  maxDailyOrders    Int         @default(4) @map("max_daily_orders")
+  /// 分成比例（百分比）
+  settlementRate    Int         @default(70) @map("settlement_rate")
+  healthCertExpireAt DateTime?  @map("health_cert_expire_at")
+  status            StaffStatus @default(PENDING)
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+  deletedAt         DateTime?   @map("deleted_at")
+
+  schedules  StaffSchedule[]
+  dispatches Dispatch[]
+  reviews    Review[]
+
+  @@index([status])
+  @@map("staff")
+}
+
+/// 保洁师排班
+model StaffSchedule {
+  id        BigInt   @id @default(autoincrement())
+  staffId   BigInt   @map("staff_id")
+  workDate  DateTime @map("work_date") @db.Date
+  startTime String   @map("start_time") @db.VarChar(5)
+  endTime   String   @map("end_time") @db.VarChar(5)
+  /// 1 可接单 2 已占用 3 请假
+  status    Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@index([staffId, workDate])
+  @@map("staff_schedule")
+}
+
+/// 派单记录
+model Dispatch {
+  id           BigInt    @id @default(autoincrement())
+  orderId      BigInt    @map("order_id")
+  staffId      BigInt    @map("staff_id")
+  /// AUTO / MANUAL / GRAB
+  dispatchType String    @default("AUTO") @map("dispatch_type") @db.VarChar(16)
+  /// PENDING / ACCEPTED / REJECTED / TIMEOUT / CANCELED
+  status       String    @default("PENDING") @db.VarChar(16)
+  /// 综合得分 ×100
+  score        Int       @default(0)
+  expireAt     DateTime? @map("expire_at")
+  respondedAt  DateTime? @map("responded_at")
+  reason       String?   @db.VarChar(255)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@index([orderId])
+  @@index([staffId, status])
+  @@map("dispatch")
+}
+
+// ============================================================
+// 第 6 批：管理后台账号与操作审计（Sprint 4）
+// ============================================================
+
+/// 后台角色
+enum AdminRole {
+  /// 超级管理员
+  SUPER_ADMIN
+  /// 运营
+  OPERATOR
+  /// 客服
+  CS
+}
+
+/// 后台账号
+model AdminUser {
+  id           BigInt    @id @default(autoincrement())
+  username     String    @unique @db.VarChar(32)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  name         String    @db.VarChar(32)
+  role         AdminRole @default(OPERATOR)
+  /// 1 正常 0 停用
+  status       Int       @default(1)
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  auditLogs AuditLog[]
+
+  @@map("admin_user")
+}
+
+/// 后台操作审计日志（只可追加）
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  adminId   BigInt   @map("admin_id")
+  module    String   @db.VarChar(32)
+  action    String   @db.VarChar(32)
+  targetId  String?  @map("target_id") @db.VarChar(64)
+  detail    Json?
+  ip        String?  @db.VarChar(64)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin AdminUser @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([module, action])
+  @@map("audit_log")
+}
+
+// ============================================================
+// 第 7 批：订单评价（Sprint 5）
+// ============================================================
+
+/// 订单评价（一单一评）
+model Review {
+  id          BigInt    @id @default(autoincrement())
+  orderId     BigInt    @unique @map("order_id")
+  userId      BigInt    @map("user_id")
+  staffId     BigInt    @map("staff_id")
+  /// 1–5 星
+  score       Int
+  /// 评价标签，字符串数组
+  tags        Json?
+  content     String?   @db.VarChar(500)
+  images      Json?
+  isAnonymous Boolean   @default(false) @map("is_anonymous")
+  /// 平台/保洁师的回复
+  reply       String?   @db.VarChar(500)
+  repliedAt   DateTime? @map("replied_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@index([staffId, createdAt])
+  @@index([userId])
+  @@map("review")
+}
+
+// ============================================================
+// 第 8 批：站内消息与微信订阅消息（Sprint 5）
+// ============================================================
+
+/// 消息通知
+model Notification {
+  id           BigInt    @id @default(autoincrement())
+  /// USER / STAFF
+  receiverType String    @map("receiver_type") @db.VarChar(16)
+  receiverId   BigInt    @map("receiver_id")
+  /// ORDER_STATUS / DISPATCH / SYSTEM
+  type         String    @db.VarChar(32)
+  title        String    @db.VarChar(64)
+  content      String    @db.VarChar(255)
+  orderId      BigInt?   @map("order_id")
+  /// 点击消息跳转的小程序页面
+  page         String?   @db.VarChar(128)
+  isRead       Boolean   @default(false) @map("is_read")
+  readAt       DateTime? @map("read_at")
+  /// 微信订阅消息发送结果：MOCK / SENT / FAILED / SKIPPED
+  wxStatus     String?   @map("wx_status") @db.VarChar(16)
+  wxError      String?   @map("wx_error") @db.VarChar(255)
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([receiverType, receiverId, isRead])
+  @@index([orderId])
+  @@map("notification")
+}

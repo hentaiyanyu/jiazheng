@@ -1,0 +1,102 @@
+<view class="page">
+  <block wx:if="{{task}}">
+    <view class="status-card">
+      <view class="status-text">{{statusText}}</view>
+      <view class="status-tip">{{task.orderNo}}</view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">服务信息</view>
+      <view class="row">
+        <text>{{task.service.name}}</text>
+        <text class="muted">{{task.service.skuName}}</text>
+      </view>
+      <view class="row">
+        <text class="muted">服务时间</text>
+        <text>{{task.serviceDate}} {{task.startTime}}-{{task.endTime}}</text>
+      </view>
+      <view class="row">
+        <text class="muted">服务时长</text>
+        <text>{{task.durationMinutes}} 分钟</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">服务地址</view>
+      <view>{{task.address.district}}{{task.address.detail}}</view>
+      <view class="muted" style="margin-top: 8rpx;">
+        {{task.address.floor}} 楼 · {{task.address.hasElevator ? '有电梯' : '无电梯'}}
+      </view>
+      <view class="row" style="margin-top: 16rpx;">
+        <text class="muted">联系人</text>
+        <text>{{task.address.contactName}}</text>
+      </view>
+      <view class="row">
+        <text class="muted">联系电话</text>
+        <text>{{task.address.contactPhone}}</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title">收入</view>
+      <view class="row">
+        <text class="muted">订单金额</text>
+        <text>¥{{payableText}}</text>
+      </view>
+      <view class="row">
+        <text class="muted">预计收入（分成 {{task.settlementRate}}%）</text>
+        <text class="income">¥{{incomeText}}</text>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{task.remark}}">
+      <view class="section-title">客户备注</view>
+      <view class="muted">{{task.remark}}</view>
+    </view>
+
+    <view class="card" wx:if="{{checkinPhoto || finishPhotos.length > 0}}">
+      <view class="section-title">服务照片</view>
+
+      <view wx:if="{{checkinPhoto}}">
+        <view class="muted">到店打卡</view>
+        <image class="photo" src="{{checkinPhoto}}" mode="aspectFill" bindtap="onPreviewCheckin" />
+      </view>
+
+      <view wx:if="{{finishPhotos.length > 0}}" style="margin-top: 24rpx;">
+        <view class="muted">完工上报（{{finishPhotos.length}} 张）</view>
+        <view class="photo-list">
+          <image
+            wx:for="{{finishPhotos}}"
+            wx:key="index"
+            class="photo"
+            src="{{item}}"
+            mode="aspectFill"
+            data-index="{{index}}"
+            bindtap="onPreviewFinish"
+          />
+        </view>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{task.timeline.length > 0}}">
+      <view class="section-title">服务记录</view>
+      <view wx:for="{{task.timeline}}" wx:key="index" class="log-item">
+        <text class="log-status">{{item.toStatus}}</text>
+        <text class="muted">{{item.reason}}</text>
+      </view>
+    </view>
+
+    <view class="footer-space"></view>
+
+    <view class="footer">
+      <view class="footer-actions">
+        <view wx:if="{{canReject}}" class="btn-ghost" bindtap="onReject">拒单</view>
+        <view wx:if="{{canAccept}}" class="btn-primary btn-sm" bindtap="onAccept">接单</view>
+        <view wx:if="{{canCheckin}}" class="btn-primary btn-sm" bindtap="onPhotoCheckin">拍照打卡</view>
+        <view wx:if="{{canFinish}}" class="btn-primary btn-sm" bindtap="onFinish">完工上报</view>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="empty">加载中…</view>
+</view>

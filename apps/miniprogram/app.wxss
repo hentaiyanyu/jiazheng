@@ -1,0 +1,65 @@
+page {
+  background: #f5f6f8;
+  color: #1f2329;
+  font-size: 28rpx;
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+}
+
+.page {
+  padding-bottom: 40rpx;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 20rpx;
+  margin: 24rpx;
+  padding: 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 20rpx;
+}
+
+.muted {
+  color: #8a8f99;
+  font-size: 24rpx;
+}
+
+.price {
+  color: #ff5b05;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: #00b578;
+  color: #ffffff;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 88rpx;
+  text-align: center;
+}
+
+.btn-primary.is-disabled {
+  background: #c9ced6;
+}
+
+.empty {
+  text-align: center;
+  color: #8a8f99;
+  padding: 120rpx 0;
+  font-size: 26rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.row + .row {
+  margin-top: 20rpx;
+}

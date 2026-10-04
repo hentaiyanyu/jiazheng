@@ -1,0 +1,26 @@
+{
+  "name": "home-cleaning",
+  "version": "0.1.0",
+  "private": true,
+  "description": "家政清洁服务小程序 - monorepo",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm --filter @hc/api build && pnpm --filter @hc/admin build",
+    "dev": "pnpm --filter @hc/api start:dev",
+    "dev:admin": "pnpm --filter @hc/admin dev",
+    "build:admin": "pnpm --filter @hc/admin build",
+    "db:generate": "pnpm --filter @hc/api prisma:generate",
+    "db:migrate": "pnpm --filter @hc/api prisma:migrate",
+    "db:seed": "pnpm --filter @hc/api prisma:seed",
+    "db:studio": "pnpm --filter @hc/api prisma:studio",
+    "db:reset": "pnpm --filter @hc/api exec prisma migrate reset --force",
+    "test": "pnpm --filter @hc/pricing test && pnpm --filter @hc/api test",
+    "test:pricing": "pnpm --filter @hc/pricing test",
+    "format": "prettier --write \"**/*.{ts,js,json,md,yml,yaml}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
+}

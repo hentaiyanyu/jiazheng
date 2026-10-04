@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-test:
+    name: 构建与测试
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123456
+          MYSQL_DATABASE: home_cleaning
+          TZ: Asia/Shanghai
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot123456"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: mysql://root:root123456@127.0.0.1:3306/home_cleaning
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: ci-only-secret-for-testing
+      JWT_EXPIRES_IN: 2h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      WX_MOCK: 'true'
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建共享包
+        run: pnpm --filter @hc/shared build
+
+      - name: 数据库迁移与种子数据
+        working-directory: apps/api
+        run: |
+          pnpm run prisma:deploy
+          pnpm run prisma:seed
+
+      - name: 构建后端
+        run: pnpm --filter @hc/api build
+
+      - name: 运行测试
+        run: pnpm --filter @hc/api test -- --passWithNoTests

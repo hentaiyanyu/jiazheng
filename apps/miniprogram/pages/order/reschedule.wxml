@@ -1,0 +1,51 @@
+<view class="page">
+  <view class="card" wx:if="{{order}}">
+    <view class="section-title">当前预约</view>
+    <view>{{order.service.name}} · {{order.service.skuName}}</view>
+    <view class="muted">{{order.serviceDate}} {{order.startTime}}-{{order.endTime}}</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">新的服务日期</view>
+    <scroll-view scroll-x class="dates" enable-flex>
+      <view
+        wx:for="{{dateOptions}}"
+        wx:key="value"
+        class="date {{activeDate === item.value ? 'date-active' : ''}}"
+        data-date="{{item.value}}"
+        bindtap="onSelectDate"
+      >
+        <view class="date-label">{{item.label}}</view>
+        <view class="date-sub">{{item.subLabel}}</view>
+      </view>
+    </scroll-view>
+
+    <view class="section-title" style="margin-top: 32rpx;">新的服务时间</view>
+    <view class="slots">
+      <view
+        wx:for="{{slots}}"
+        wx:key="startTime"
+        class="slot {{item.available ? '' : 'slot-disabled'}} {{startTime === item.startTime ? 'slot-active' : ''}}"
+        data-time="{{item.startTime}}"
+        bindtap="onSelectSlot"
+      >
+        <view class="slot-time">{{item.startTime}}</view>
+        <view class="slot-tip">{{item.tip}}</view>
+      </view>
+    </view>
+    <view wx:if="{{slots.length === 0}}" class="muted" style="padding: 20rpx 0;">当前日期暂无可预约时段</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">改期说明</view>
+    <view class="muted" style="line-height: 48rpx;">· 距服务开始 4 小时以上可自助改期，不收取费用</view>
+    <view class="muted" style="line-height: 48rpx;">· 改期后系统会重新匹配服务人员，原服务人员可能变化</view>
+    <view class="muted" style="line-height: 48rpx;">· 距服务开始不足 4 小时请直接联系客服</view>
+  </view>
+
+  <view class="footer-space"></view>
+
+  <view class="footer">
+    <view class="btn-primary" bindtap="onSubmit">{{submitting ? '提交中…' : '确认改期'}}</view>
+  </view>
+</view>

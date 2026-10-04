@@ -1,0 +1,39 @@
+<view class="page">
+  <view class="profile">
+    <view class="avatar">{{userInfo.nickname ? userInfo.nickname[0] : '客'}}</view>
+    <view class="profile-main">
+      <view class="nickname">{{userInfo ? userInfo.nickname : '未登录'}}</view>
+      <view class="muted">{{phoneText || '未绑定手机号'}}</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="row" bindtap="onGoAddress">
+      <text>我的服务地址</text>
+      <text class="muted">管理 ›</text>
+    </view>
+    <view class="row" bindtap="onGoMessage">
+      <text>消息中心</text>
+      <text class="muted">{{unread > 0 ? unread + ' 条未读 ›' : '›'}}</text>
+    </view>
+    <view class="row">
+      <text>我的积分</text>
+      <text class="muted">{{userInfo ? userInfo.points : 0}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="row" bindtap="onContact">
+      <text>联系客服</text>
+      <text class="muted">›</text>
+    </view>
+    <view class="row" bindtap="onGoStaff">
+      <text>保洁师入口</text>
+      <text class="muted">接单与履约 ›</text>
+    </view>
+    <view class="row" bindtap="onAbout">
+      <text>关于我们</text>
+      <text class="muted">v0.1.0</text>
+    </view>
+  </view>
+</view>

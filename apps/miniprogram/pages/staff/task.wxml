@@ -1,0 +1,61 @@
+<view class="page">
+  <block wx:if="{{!loggedIn}}">
+    <view class="card">
+      <view class="section-title">保洁师登录</view>
+      <view class="muted">开发阶段使用登录码进入，正式环境改为微信授权 + 平台审核开通。</view>
+      <view class="btn-primary login-btn" bindtap="onLogin">使用登录码登录</view>
+      <view class="muted tip">可用的开发登录码：staff_dev001 / staff_dev002 / staff_dev003</view>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="profile">
+      <view class="profile-name">{{staffInfo.name}}</view>
+      <view class="profile-meta">评分 {{staffInfo.rating}} · 累计 {{staffInfo.orderCount}} 单 · 接单率 {{staffInfo.acceptRate}}%</view>
+      <view class="message-link" bindtap="onGoMessage">消息{{unread > 0 ? ' (' + unread + ')' : ''}}</view>
+      <view class="logout" bindtap="onLogout">退出</view>
+    </view>
+
+    <scroll-view class="tabs" scroll-x enable-flex>
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="tab {{activeTab === item.key ? 'tab-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onTabChange"
+      >{{item.label}}</view>
+    </scroll-view>
+
+    <view
+      wx:for="{{list}}"
+      wx:key="orderId"
+      class="card"
+      data-id="{{item.orderId}}"
+      bindtap="onOpenTask"
+    >
+      <view class="row">
+        <text class="task-status">{{item.statusText}}</text>
+        <text class="muted">{{item.orderNo}}</text>
+      </view>
+
+      <view class="task-title">{{item.serviceName}}</view>
+      <view class="muted">{{item.skuName}}</view>
+      <view class="muted">时间：{{item.serviceDate}} {{item.startTime}}-{{item.endTime}}</view>
+      <view class="muted">地址：{{item.addressText}}</view>
+      <view class="muted">联系人：{{item.address.contactName}}</view>
+      <view class="row task-footer">
+        <text class="price">¥{{item.payableText}}</text>
+      </view>
+
+      <view class="actions">
+        <view wx:if="{{item.canReject}}" class="btn-ghost" data-id="{{item.orderId}}" catchtap="onReject">拒单</view>
+        <view wx:if="{{item.canAccept}}" class="btn-primary btn-sm" data-id="{{item.orderId}}" catchtap="onAccept">接单</view>
+        <view wx:if="{{item.canCheckin}}" class="btn-primary btn-sm" data-id="{{item.orderId}}" catchtap="onPhotoCheckin">拍照打卡</view>
+        <view wx:if="{{item.canFinish}}" class="btn-primary btn-sm" data-id="{{item.orderId}}" catchtap="onFinish">完工上报</view>
+      </view>
+      <view class="card-hint muted">查看详情 ›</view>
+    </view>
+
+    <view wx:if="{{!loading && list.length === 0}}" class="empty">当前没有任务</view>
+  </block>
+</view>

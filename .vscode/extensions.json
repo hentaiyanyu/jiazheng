@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "Vue.volar",
+    "Prisma.prisma",
+    "ms-azuretools.vscode-docker",
+    "EditorConfig.EditorConfig",
+    "mikestead.dotenv",
+    "redhat.vscode-yaml",
+    "qiu8310.minapp-vscode",
+    "orta.vscode-jest",
+    "eamodio.gitlens",
+    "usernamehw.errorlens",
+    "christian-kohler.path-intellisense",
+    "christian-kohler.npm-intellisense",
+    "formulahendry.auto-rename-tag"
+  ]
+}

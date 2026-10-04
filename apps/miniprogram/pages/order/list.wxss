@@ -1,0 +1,61 @@
+.tabs {
+  white-space: nowrap;
+  padding: 20rpx 16rpx 4rpx;
+}
+
+.tab {
+  display: inline-block;
+  padding: 12rpx 30rpx;
+  margin: 0 8rpx;
+  background: #ffffff;
+  border-radius: 40rpx;
+  font-size: 26rpx;
+  color: #4e5969;
+}
+
+.tab-active {
+  background: #00b578;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.order-card {
+  padding: 28rpx;
+}
+
+.order-no {
+  font-size: 24rpx;
+}
+
+.order-status {
+  font-size: 26rpx;
+  color: #00b578;
+  font-weight: 600;
+}
+
+.status-warn {
+  color: #ff7d00;
+}
+
+.order-title {
+  margin: 16rpx 0 8rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.order-footer {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid #f0f1f3;
+}
+
+.empty-btn {
+  margin: 40rpx auto 0;
+  width: 320rpx;
+  text-align: center;
+  color: #00b578;
+  border: 2rpx solid #00b578;
+  border-radius: 44rpx;
+  line-height: 80rpx;
+  font-size: 28rpx;
+}

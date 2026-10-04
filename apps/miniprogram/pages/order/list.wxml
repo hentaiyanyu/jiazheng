@@ -1,0 +1,37 @@
+<view class="page">
+  <scroll-view class="tabs" scroll-x enable-flex>
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="tab {{activeTab === item.key ? 'tab-active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onTabChange"
+    >{{item.label}}</view>
+  </scroll-view>
+
+  <view
+    wx:for="{{list}}"
+    wx:key="orderId"
+    class="card order-card"
+    data-id="{{item.orderId}}"
+    bindtap="onTapOrder"
+  >
+    <view class="row">
+      <text class="order-no muted">{{item.orderNo}}</text>
+      <text class="order-status {{item.canPay ? 'status-warn' : ''}}">{{item.statusText}}</text>
+    </view>
+
+    <view class="order-title">{{item.serviceName}}</view>
+    <view class="muted">{{item.skuName}}</view>
+    <view class="muted">{{item.serviceDate}} {{item.startTime}}-{{item.endTime}}</view>
+    <view class="muted">{{item.addressText}}</view>
+
+    <view class="row order-footer">
+      <text class="price">¥{{item.payableText}}</text>
+      <text class="muted">{{item.canPay ? '去支付 ›' : '查看详情 ›'}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{!loading && list.length === 0}}" class="empty">还没有订单</view>
+  <view wx:if="{{!loading && list.length === 0}}" class="empty-btn" bindtap="onGoHome">去下单</view>
+</view>

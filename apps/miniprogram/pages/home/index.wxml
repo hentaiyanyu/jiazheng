@@ -1,0 +1,44 @@
+<view class="page">
+  <view class="hero">
+    <view class="hero-title">家政清洁服务</view>
+    <view class="hero-sub">实名服务人员 · 明码标价 · 超时赔付</view>
+  </view>
+
+  <scroll-view class="cats" scroll-x enable-flex>
+    <view
+      class="cat {{activeCategoryId === '' ? 'cat-active' : ''}}"
+      data-id=""
+      bindtap="onSelectCategory"
+    >全部</view>
+    <view
+      wx:for="{{categories}}"
+      wx:key="id"
+      class="cat {{activeCategoryId === item.id ? 'cat-active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="onSelectCategory"
+    >{{item.name}}</view>
+  </scroll-view>
+
+  <view class="list">
+    <view
+      wx:for="{{services}}"
+      wx:key="id"
+      class="card service-card"
+      data-id="{{item.id}}"
+      bindtap="onTapService"
+    >
+      <view class="service-main">
+        <view class="service-name">{{item.name}}</view>
+        <view class="service-sub">{{item.subtitle}}</view>
+        <view class="service-meta muted">{{item.durationMinutes}} 分钟 · {{item.skuCount}} 种规格</view>
+      </view>
+      <view class="service-price">
+        <text class="price-symbol price">¥</text>
+        <text class="price-num price">{{item.priceFrom}}</text>
+        <text class="price-unit muted">起</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{!loading && services.length === 0}}" class="empty">该分类下暂无服务</view>
+</view>
