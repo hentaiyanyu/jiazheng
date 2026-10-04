@@ -53,7 +53,15 @@ if errorlevel 1 goto :error
 
 echo [5/5] Pushing to GitHub...
 git push -u origin main
-if errorlevel 1 goto :error
+if errorlevel 1 (
+  echo.
+  echo   Push rejected. This usually means the remote repository was created
+  echo   with an auto-generated README, so the two histories are unrelated.
+  echo   Retrying with --force (only the auto-generated README will be replaced) ...
+  echo.
+  git push -u origin main --force
+  if errorlevel 1 goto :error
+)
 
 echo.
 echo ============================================
